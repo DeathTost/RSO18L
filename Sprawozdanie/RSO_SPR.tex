@@ -128,8 +128,8 @@ morekeywords={}
 %Krzysztof Solecki, 269346\\
 %Michał Trochimiak, 265780\\
 \vspace*{2\baselineskip}
-%\today
-10 maja 2018
+\today
+%10 maja 2018
 \end{center}
 \vspace*{3\baselineskip}
 \begin{center}
@@ -504,30 +504,19 @@ Serwis realizujący obsługę zamówień; ich składanie, edycję, dostęp oraz 
 \begin{lstlisting}
 Order:
 {
-	"id": 2137,
-    "userId": 12,
-    "isCompleted": true,
-    "isBeingProcessed": false,
-    "isPaid" : true,
+    "userId": "user",
+    "completed": true,
+    "beingProcessed": false,
+    "paid" : true,
     "productsList": 
     [
-    	{
-        	"orderId": 2137,
-        	"productId": 1,
-            "price": 2.49,
-            "quantity": 30
-        },
-        {
-        	"orderId": 2137
-            "productId": 2,
-            "price": 2.49,
-            "quantity": 20
-        }
+    	{ "productId": 1, "price": 2.49, "quantity": 30 },
+        { "productId": 2, "price": 2.49, "quantity": 20 }			
     ]
 }
 \end{lstlisting}
 \vspace{-20pt}
-"id" jest liczbą całkowitą generowaną automatycznie pełniąca rolę klucza głównego w serwisie zamówień, "userId" jest napisem oznaczającym identyfikator użytkownika. Będzie on otrzymywany z serwisu użytkowników. Kolejne trzy zmienne reprezentują stan zamówienia. Zamówienie może znajdować się w stanach opisanych w tabeli \ref{stanyZamowienia}.
+Kluczem głównym w tabeli "Order" jest pole "id". Jest to wartość typu Long, której wartość jest generowana automatycznie (dlatego nie została podana powyżej). Pole "userId" jest identyfikatorem użytkownika. Kolejne trzy wartości reprezentują określone stany, w którym może się znaleźć zamówienie. Zostały one opisane w tabeli poniżej. 
 
 \begin{table}[htp]
 \caption{Stany zamówienia.}
@@ -544,7 +533,15 @@ Order:
 \end{tabularx}
 \end{table}
 
-Zamówienie zawiera listę produktów. Każdy z produktów zawiera pole "productId", reprezentujące jego identyfikator, pole "quantity" określające ilość zamawianego produktu, oraz pole "price" specyfikujące koszt jednostkowy danego towaru. Wystąpienia poszczególnych produktów w zamówieniach są w tabeli OrderProduct:
+Zamówienie zawiera listę  pozycji  "productsList", na podstawie której tworzone są elementy reprezentujące kolejne pozycje tabeli "OrderProduct". Każdy z produktów zawiera pola:
+\begin{itemize}
+\item "orderId" - reprezentuje numer zamówienia (wartość nie podawana podczas tworzenia zamówienia ("orderId" przyjmuje tą samą wartość co "id")), część klucza głównego tabeli "OrderProduct", wartość Long.
+\item "productId" - reprezentuje identyfikator produktu, część klucza głównego tabeli "OrderProduct", wartość Long
+\item "quantity" - reprezentuje ilość zamawianego produktu, wartość Long 
+\item "price" - reprezentuje koszt jednostkowy danego produktu, wartość Double
+\end{itemize}
+
+Poniżej zostaje przedstawiona reprezentacja pojedynczego wiersza w formacie JSON tabeli "OrderProduct":
 
 \begin{lstlisting}
 OrderProduct:
@@ -583,9 +580,10 @@ Schemat bazy danych serwisu zamówień zawiera diagram \ref{ordertDB}.
 \caption{Schemat bazy danych serwisu zamówień.}
 \label{ordertDB}
 \centering
-\includegraphics[height=3.5cm, width=15.7cm]{orderDB}
+\includegraphics[height=3.75cm, width=11.7cm]{orderDB}
 \end{figure}
 
+%\vspace*{2\baselineskip}
 Dodatkowe uwagi:
 \begin{enumerate}
 \item pole "orderId" jest generowane automatycznie
