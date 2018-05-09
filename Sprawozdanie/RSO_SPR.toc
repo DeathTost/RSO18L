@@ -27,3 +27,4 @@
 \contentsline {section}{\numberline {7}Organizacja projektu}{24}{section.7}
 \contentsline {subsection}{\numberline {7.1}Mo\IeC {\.z}liwe rozszerzenia}{24}{subsection.7.1}
 \contentsline {subsection}{\numberline {7.2}Etapy projektu}{24}{subsection.7.2}
+\contentsline {subsection}{\numberline {7.3}Przydzia\IeC {\l } zada\IeC {\'n}}{25}{subsection.7.3}
