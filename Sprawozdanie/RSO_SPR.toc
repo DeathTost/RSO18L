@@ -1,0 +1,29 @@
+\contentsline {section}{\numberline {1}Specyfikacja wymaga\IeC {\'n}}{3}{section.1}
+\contentsline {section}{\numberline {2}Analiza wymaga\IeC {\'n}}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Wymagania funkcjonalne}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Wymagania niefunkcjonalne}{4}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}U\IeC {\.z}yteczno\IeC {\'s}\IeC {\'c}}{4}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}Niezawodno\IeC {\'s}\IeC {\'c} i bezpiecze\IeC {\'n}stwo}{4}{subsubsection.2.2.2}
+\contentsline {subsubsection}{\numberline {2.2.3}Wydajno\IeC {\'s}\IeC {\'c}}{5}{subsubsection.2.2.3}
+\contentsline {section}{\numberline {3}Przypadki u\IeC {\.z}ycia}{5}{section.3}
+\contentsline {section}{\numberline {4}Architektura systemu}{6}{section.4}
+\contentsline {section}{\numberline {5}Rozwi\IeC {\k a}zanie}{9}{section.5}
+\contentsline {subsection}{\numberline {5.1}Serwis u\IeC {\.z}ytkownik\IeC {\'o}w}{9}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}Serwis produkt\IeC {\'o}w}{10}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Serwis zam\IeC {\'o}wie\IeC {\'n}}{13}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Frontend}{15}{subsection.5.4}
+\contentsline {subsection}{\numberline {5.5}Specyfikacja technologii realizacji oprogramowania}{18}{subsection.5.5}
+\contentsline {subsubsection}{\numberline {5.5.1}Standaryzacja zapyta\IeC {\'n}}{18}{subsubsection.5.5.1}
+\contentsline {section}{\numberline {6}W\IeC {\l }a\IeC {\'s}ciwo\IeC {\'s}ci niezawodno\IeC {\'s}ci i bezpiecze\IeC {\'n}stwa}{18}{section.6}
+\contentsline {subsection}{\numberline {6.1}Keycloak}{18}{subsection.6.1}
+\contentsline {subsubsection}{\numberline {6.1.1}Autoryzacja przy pomocy token\IeC {\'o}w OpenID}{19}{subsubsection.6.1.1}
+\contentsline {subsubsection}{\numberline {6.1.2}Keycloak w kontek\IeC {\'s}cie RODO}{19}{subsubsection.6.1.2}
+\contentsline {subsubsection}{\numberline {6.1.3}U\IeC {\.z}ytkowanie w projekcie}{20}{subsubsection.6.1.3}
+\contentsline {subsection}{\numberline {6.2}Replikacja baz danych}{22}{subsection.6.2}
+\contentsline {subsubsection}{\numberline {6.2.1}Implementacja}{23}{subsubsection.6.2.1}
+\contentsline {subsubsection}{\numberline {6.2.2}Wi\IeC {\k e}zy sp\IeC {\'o}jno\IeC {\'s}ci}{23}{subsubsection.6.2.2}
+\contentsline {subsubsection}{\numberline {6.2.3}ProxySQL}{23}{subsubsection.6.2.3}
+\contentsline {subsection}{\numberline {6.3}Zarz\IeC {\k a}dzanie instancjami serwis\IeC {\'o}w}{23}{subsection.6.3}
+\contentsline {section}{\numberline {7}Organizacja projektu}{24}{section.7}
+\contentsline {subsection}{\numberline {7.1}Mo\IeC {\.z}liwe rozszerzenia}{24}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}Etapy projektu}{24}{subsection.7.2}

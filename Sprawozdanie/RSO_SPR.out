@@ -1,0 +1,29 @@
+\BOOKMARK [1][-]{section.1}{Specyfikacja wymagan}{}% 1
+\BOOKMARK [1][-]{section.2}{Analiza wymagan}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Wymagania funkcjonalne}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Wymagania niefunkcjonalne}{section.2}% 4
+\BOOKMARK [3][-]{subsubsection.2.2.1}{Uzytecznosc}{subsection.2.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.2.2}{Niezawodnosc i bezpieczenstwo}{subsection.2.2}% 6
+\BOOKMARK [3][-]{subsubsection.2.2.3}{Wydajnosc}{subsection.2.2}% 7
+\BOOKMARK [1][-]{section.3}{Przypadki uzycia}{}% 8
+\BOOKMARK [1][-]{section.4}{Architektura systemu}{}% 9
+\BOOKMARK [1][-]{section.5}{Rozwiazanie}{}% 10
+\BOOKMARK [2][-]{subsection.5.1}{Serwis uzytkownik\363w}{section.5}% 11
+\BOOKMARK [2][-]{subsection.5.2}{Serwis produkt\363w}{section.5}% 12
+\BOOKMARK [2][-]{subsection.5.3}{Serwis zam\363wien}{section.5}% 13
+\BOOKMARK [2][-]{subsection.5.4}{Frontend}{section.5}% 14
+\BOOKMARK [2][-]{subsection.5.5}{Specyfikacja technologii realizacji oprogramowania}{section.5}% 15
+\BOOKMARK [3][-]{subsubsection.5.5.1}{Standaryzacja zapytan}{subsection.5.5}% 16
+\BOOKMARK [1][-]{section.6}{W\233asciwosci niezawodnosci i bezpieczenstwa}{}% 17
+\BOOKMARK [2][-]{subsection.6.1}{Keycloak}{section.6}% 18
+\BOOKMARK [3][-]{subsubsection.6.1.1}{Autoryzacja przy pomocy token\363w OpenID}{subsection.6.1}% 19
+\BOOKMARK [3][-]{subsubsection.6.1.2}{Keycloak w kontekscie RODO}{subsection.6.1}% 20
+\BOOKMARK [3][-]{subsubsection.6.1.3}{Uzytkowanie w projekcie}{subsection.6.1}% 21
+\BOOKMARK [2][-]{subsection.6.2}{Replikacja baz danych}{section.6}% 22
+\BOOKMARK [3][-]{subsubsection.6.2.1}{Implementacja}{subsection.6.2}% 23
+\BOOKMARK [3][-]{subsubsection.6.2.2}{Wiezy sp\363jnosci}{subsection.6.2}% 24
+\BOOKMARK [3][-]{subsubsection.6.2.3}{ProxySQL}{subsection.6.2}% 25
+\BOOKMARK [2][-]{subsection.6.3}{Zarzadzanie instancjami serwis\363w}{section.6}% 26
+\BOOKMARK [1][-]{section.7}{Organizacja projektu}{}% 27
+\BOOKMARK [2][-]{subsection.7.1}{Mozliwe rozszerzenia}{section.7}% 28
+\BOOKMARK [2][-]{subsection.7.2}{Etapy projektu}{section.7}% 29
