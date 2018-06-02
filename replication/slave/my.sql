@@ -1,7 +1,0 @@
-CHANGE MASTER TO
-    MASTER_HOST='127.0.0.1',
-    MASTER_PORT=$STARTING_PORT,
-    MASTER_USER='replication',
-    MASTER_PASSWORD='replication';
-SET GLOBAL read_only = 1;
-START SLAVE;

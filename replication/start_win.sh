@@ -14,7 +14,9 @@ main() {
     done
     proxy_prepare
     docker build -t proxy proxy
-    docker run -p6033:6033 proxy
+    proxy_port=$((STARTING_PORT + NO_SLAVES + 1))
+    docker run -d -p$proxy_port:6033 proxy
+    echo "Started proxy on port: $proxy_port"
 }
 
 common_setup() {
