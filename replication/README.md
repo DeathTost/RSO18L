@@ -191,4 +191,4 @@ manager wybierze jednego ze slave'ów na mastera
 
 * Windowsowy skrypt jest outdated
 
-   ¯\_(ツ)\_/¯
+   ¯\\_(ツ)\_/¯
