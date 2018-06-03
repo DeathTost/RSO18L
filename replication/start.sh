@@ -17,7 +17,7 @@ main() {
 common_setup() {
     index=$1
     conf=$2
-    config_dir="$index"_config
+    config_dir="$index"_"$STARTING_PORT"_config
 
     rm -rf $config_dir
     mkdir $config_dir
@@ -58,7 +58,7 @@ slave_setup() {
     mysql -h$1 -P3306 -uroot <<<\
         "CHANGE MASTER TO
             MASTER_HOST='$2',
-            MASTER_PORT=$STARTING_PORT,
+            MASTER_PORT=3306,
             MASTER_USER='replication',
             MASTER_PASSWORD='replication';
          SET GLOBAL read_only = 1;
@@ -89,14 +89,18 @@ proxy_prepare() {
         insert_cmd=$insert_cmd",\n{hostgroup=2\naddress=\"172.17.0.1\"\nport=$(($STARTING_PORT + i))}"
     done
     insert_cmd=$insert_cmd")"
-    cp ./proxysql.cfg proxy/proxysql_done.cfg
-    printf $insert_cmd >> proxy/proxysql_done.cfg
+    cp ./proxysql.cfg $1/proxysql_done.cfg
+    printf $insert_cmd >> $1/proxysql_done.cfg
 }
 
 setup_proxy() {
-    proxy_prepare
-    manager_prepare
-    docker build -t proxy proxy
+    proxy_dir="proxy_$STARTING_PORT"
+    rm -rf $proxy_dir
+    mkdir $proxy_dir
+    cp proxy/* $proxy_dir
+    proxy_prepare $proxy_dir
+    manager_prepare $proxy_dir
+    docker build -t proxy $proxy_dir
     proxy_port=$((STARTING_PORT + NO_SLAVES + 1))
     docker run -d -p$proxy_port:6033 proxy
     share_keys
@@ -111,8 +115,8 @@ manager_prepare() {
         ip=$(docker inspect $id | grep -w IPAddress -m 1 | awk '{print substr($2, 2, length($2)-3)}')
         insert_cmd=$insert_cmd"\n[server-$id]\nhostname=host-$id\nip=$ip\nport=3306\n"
     done
-    cp ./mha_manager.cfg proxy/mha_manager_done.cfg
-    printf $insert_cmd >> proxy/mha_manager_done.cfg
+    cp ./mha_manager.cfg $1/mha_manager_done.cfg
+    printf $insert_cmd >> $1/mha_manager_done.cfg
 }
 
 main

@@ -185,10 +185,12 @@ manager wybierze jednego ze slave'ów na mastera
    serwerów przestanie działać (albo chcemy dodać nowy), trzeba ponownie
    zmieniać config.
 
-* Skrypt nie jest przystosowany do bycia uruchomionym kilkukrotnie (w celu stworzenia osobnych środowisk dla każdego mikroserwisu)
+   Apparently internety uważają, że nie można tego zbyt bardzo automatyzować,
+   bo tak czy owak trzeba zajrzeć, zobaczyć co się zjebało i czemu i jak to
+   naprawić. My quote for today: "In high availability (HA) environments,
+   automate everything and cause it to stop being HA."
 
-   Do poprawki na dniach.
-
+* ~~Skrypt nie jest przystosowany do bycia uruchomionym kilkukrotnie (w celu stworzenia osobnych środowisk dla każdego mikroserwisu)~~
 * Windowsowy skrypt jest outdated
 
    ¯\\_(ツ)\_/¯
