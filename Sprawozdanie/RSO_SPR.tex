@@ -149,6 +149,7 @@ Rejestr zmian
  19.04.2018 & 0.2 & Opracowanie wstępnych interfejsów serwisów i wyglądu aplikacji użytkowej \\\hline
  26.04.2018 & 0.3 & Szczegółowy opis serwisów \\\hline
  10.05.2018 & 1.0 & Dokumentacja etapu pierwszego\\\hline
+ 8.06.2018 & 2.0 & Końcowa dokumentacja projektu \\\hline
 \end{tabular}
 \end{table}
 %\egroup
@@ -217,7 +218,7 @@ Na podstawie specyfikacji oraz wymagań funkcjonalnych wyodrębnionych w czasie 
 \end{itemize}
 
 \vspace*{1\baselineskip}
-Zdefiniowano następujące przypadki użycia systemu:
+Zidentyfikowano następujące przypadki użycia systemu:
 \begin{enumerate}[start=1,label={PU\arabic*.}]
 \item \textbf{Rejestracja użytkownika:} Stworzenie konta użytkownika, obejmuje nadanie mu nazwy i hasła oraz odpowiednich uprawnień.
 \item \textbf{Modyfikacja konta użytkownika:} Użytkownik może zmienić hasło lub dane osobowe.
@@ -242,6 +243,22 @@ Zdefiniowano następujące przypadki użycia systemu:
 %Ogólnie o architekturze mikroserwisów, wzorce architektoniczne z jakich korzystamy, decyzje architektoniczne, które wpływają na system
 %\\
 %\\
+\begin{figure}[ht]
+%\vspace{-20pt}
+\caption{Zestawienie wszystkich serwisów.}
+\label{wszystkieSerwisy}
+\centering
+\includegraphics[height=8.4cm, width=15.7cm]{rso_services}
+\end{figure}
+
+\begin{figure}[ht]
+%\vspace{-20pt}
+\caption{Skalowalność systemu.}
+\label{skalowalnosc}
+\centering
+\includegraphics[height=8.4cm, width=15.7cm]{architektura_replikacja}
+\end{figure}
+
 \begin{figure}[ht]
 %\vspace{-20pt}
 \caption{Diagram klas}
@@ -291,6 +308,140 @@ Zdefiniowano następujące przypadki użycia systemu:
 \end{figure}
 
 \clearpage
+\section{Właściwości niezawodności i bezpieczeństwa}
+\subsection{Keycloak}
+Keycloak jest oprogramowaniem open source, zajmującym się obsługą zarządzania danymi użytkowników oraz ich autoryzacji w serwisach. Dodatkowymi funkcjonalnościami udostępnianymi przez program jest możliwość skonfigurowania federacji użytkowników (np. synchronizacja z bazą użytkowników LDAP), a także ustalenia tożsamości na podstawie tokenów otrzymanych przez inne systemy autoryzacyjne (np. Kerberos). Autoryzacja w Keycloak'u bazuje na protokołach OpenID Connect, OAuth 2.0 lub SAML. 
+
+\subsubsection{Autoryzacja przy pomocy tokenów OpenID}
+
+Standardową formą autoryzacji jest stworzenie lokalnej bazy dla danych użytkowników, z których następnie korzystać będzie aplikacja. Problemem, który stwarza to rozwiązanie jest oczywiście konieczność stworzenia oddzielnego konta dla użytkownika w każdej z naszych aplikacji. Oznacza to nie tylko konieczność utrzymania wszystkich instancji baz danych, ale jest także nużące dla samego użytkownika. Dodatkowo, ponieważ dane użytkownika powielone są w wielu miejscach, trudno jest zapewnić, iż nie będą miały do nich dostępu osoby niepowołane, a usunięcie danych z każdej z baz także nie byłoby trywialnym zadaniem.
+
+Intuicyjnym rozwiązaniem, adresującym te problemy, jest stworzenie centralnej bazy użytkowników, z której korzystać będą wszystkie nasze aplikacje. Jednakże udzielenie bezpośredniego dostępu do jednej bazy danych wielu aplikacjom, których implementacje korzystania z niej mogą się różnić, także nie wydaje się być zbyt atrakcyjne, szczególnie w przypadku tak wrażliwych danych. Zamiast tego wykorzystuje się wyspecjalizowane serwisy, odpowiadające za autoryzację oraz zarządzanie danymi użytkowników. Można zadać sobie pytanie, czy tego typu rozwiązanie nie powoduje stworzenia pojedynczego modułu, którego awaria spowoduje brak możliwości dostępu do wszystkich aplikacji. By temu zapobiec należy zapewnić jego redundancję, co można osiągnąć wykorzystując tokeny OIDC.
+
+W ogólności rozwiązanie to wygląda następująco - do serwisu zarządzającego danymi użytkownika wysyłane jest żądanie, w którym zawierane są informacje pozwalające potwierdzić jego tożsamość (standardowo nazwa użytkownika oraz hasło). W odpowiedzi zwracany jest token, zakodowany zgodnie ze standardem RFC 7519 (JSON Web Token) i podpisany przez wystawiający go serwis, który zawiera w sobie m.in. dane o tożsamości jego posiadacza,  jednostce wydającej token oraz czasie jego ważności. Token może następnie posłużyć do stwierdzenia czy użytkownik posiada dostęp do żądanych przez niego zasobów. Ponieważ może on też być przekazywany dalej do innych aplikacji, nie ma konieczności oddzielnego logowania użytkownika w każdej z nich, o ile wszystkie są skonfigurowane tak, by móc połączyć się z serwisem zarządzającym autoryzacją i potwierdzić autentyczność tokena.
+
+Przy wykorzystaniu tokenów nie mamy więc do czynienia ze standardową sesją, której dane są przechowywane na serwerze - użytkownik autoryzowany jest poprzez sprawdzenie tokena zapisanego w pamięci, który może być używany do czasu jego wygaśnięcia. Dopóki token nie zostanie przedawniony, możliwe jest jego odświeżenie, czego obsługą zajmuje się serwer aplikacji (zakładając, iż użytkownik cały czas z niej korzysta).
+
+Serwisem zarządzającym danymi użytkowników oraz obsługującego wystawianie tokenów jest w naszym projekcie Keycloak. Jako oprogramowanie open source, może on zostać użyty do zapewnienia bezpieczeństwa bez konieczności zakupu bardziej kosztownych rozwiązań, a równocześnie z pewnością użycie go jest preferowane w stosunku do alternatywy, którą byłaby konieczność samodzielnej implementacji tego typu serwisu. Ponieważ należy on do grupy projektów firmy RedHat, daje to nadzieję, iż będzie on wciąż rozwijany i dostosowywany do aktualnych potrzeb na rynku. Dodatkową zaletą jest aktualizowany regularnie przez twórców obraz Docker, co zdecydowanie ułatwia instalację oraz utrzymanie.
+
+\subsubsection{Keycloak w kontekście RODO}
+
+Część z zalet, które skłaniają do wykorzystania serwisu Keycloak w kontekście RODO została już podana w poprzedniej części. Przede wszystkim ustalenie centralnej bazy użytkowników i jednego punktu dostępu pozwala na dokładną kontrolę tego czy są one odpowiednio przechowywane oraz czy dostęp do nich mają jedynie odpowiednie jednostki. Przy pobieraniu czy sprawdzaniu tokena nie są w żaden sposób przesyłane prywatne dane użytkowników - są one udostępniane jedynie na żądanie. Hasła użytkowników są haszowane, a inne serwisy w razie potrzeby powiązania użytkowników np. z zamówieniami używają w tym celu GUID, który jest zgodny ze standardem RFC 4122. Ponieważ identyfikator ten w tabelach poszczególnych serwisów nie jest kluczem obcym, możliwe jest usunięcie użytkownika bez naruszania ich działania (konieczne jest jedynie obsłużenie wyświetlenia komunikatu o braku danego użytkownika w bazie danych), udostępniona jest także możliwość edycji jego danych personalnych. Keycloak może też zostać łatwo skonfigurowany tak by wykorzystywać przy transferze danych certyfikaty SSL.
+
+\subsubsection{Wykorzystanie w projekcie}
+
+W ramach konfiguracji należy zdefiniować dla każdego z serwisów klienta, dla którego wygenerowany zostanie secret w postaci guida (przykładowo e7b70cf3-8d73-466b-8592-b8cfea69f704). Każdy z serwisów łączyć się będzie ze swoim klientem, podając odpowiedni secret.
+
+Autoryzacja użytkowników w serwisach przebiegać będzie następująco:
+\begin{enumerate}
+\item Przy logowaniu użytkownika, do serwera Keycloak wysyłane jest zapytanie wraz z podanymi loginem oraz hasłem użytkownika. W odpowiedzi zwracany jest token JWT, w którym zawierana jest m.in. informacja o id użytkownika, posiadanych przez niego rolach, oraz czasie wygaśnięcia tokena. Dodatkowo podawany jest refresh token, który pozwoli pobrać nowy token dostępu dla tego samego użytkownika, o ile zostanie podany przed czasem wygaśnięcia (w innym przypadku konieczne jest ponowne zalogowanie przez użytkownika).
+\item Otrzymany token jest podawany w zapytaniach do serwisów (w nagłówku Authorization). W serwisach sprawdzane jest, czy token nie wygasł, został wystawiony przez odpowiedniego wystawcę oraz (na podstawie ról) czy użytkownik ma dostęp do danego zasobu. W razie potrzeby możliwe jest dodanie ręcznie zdefiniowanych pól w tokenie, które następnie mogą być sprawdzone w samym serwisie.
+\item W przypadku gdy konieczna jest komunikacja między serwisami, przekazują one dalej w zapytaniach otrzymany token.
+\end{enumerate}
+
+Przykład pobierania tokena przedstawia rysunek \ref{pobieranieTokena}. Na diagramie \ref{zapytanieZTokenem} widać wysyłanie zapytania z tokenem w nagłówku.
+
+\begin{figure}[ht]
+%\vspace{-20pt}
+\caption{Zapytanie pobierające token.}
+\label{pobieranieTokena}
+\centering
+\includegraphics[height=8.cm, width=15.7cm]{requestForToken}
+\end{figure}
+
+\begin{figure}[ht]
+%\vspace{-20pt}
+\caption{Zapytanie zawierające token w nagłówku.}
+\label{zapytanieZTokenem}
+\centering
+\includegraphics[height=9cm, width=15.7cm]{requestWithToken}
+\end{figure}
+
+Poniżej przedstawiony jest plik konfiguracyjny w serwisie (keycloak.json):
+
+\begin{lstlisting}
+{
+  "realm": "rso",
+  "auth-server-url": "http://192.168.99.100:8080/auth",
+  "ssl-required": "external",
+  "resource": "rso-user-webservice",
+  "credentials": {
+    "secret": "e7b70cf3-8d73-466b-8592-b8cfea69f704"
+  }
+}
+\end{lstlisting}
+\vspace{-20pt}
+\clearpage
+Konfiguracja pliku web.xml tak, aby konieczne było posiadanie roli user w celu uzyskania dostępu do dowolnego REST-a:
+
+\begin{lstlisting}
+<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+    </login-config>
+
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>user-webservice</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+</web-app>
+\end{lstlisting}
+%\vspace{-20pt}
+\subsection{Replikacja baz danych}
+Serwisy stworzone w projekcie wykorzystują bazy danych MySQL. Replikacja w MySQL pozwala na odwzorowanie danych z nadrzędnego serwera bazodanowego (ang. master) na jeden lub wiele podrzędnych serwerów (ang. slave). Replikacja domyślnie odbywa się asynchronicznie, dzięki czemu serwery podrzędne nie muszą być podłączone permanentnie, aby otrzymywać aktualizacje. To sprawia, że replikacja może odbywać się na dalekich dystansach, bądź też przez tymczasowe lub ulotne połączenie. W zależności od konfiguracji, replikacja może dotyczyć wszystkich baz danych, wybranych, a nawet konkretnych tabel wewnątrz bazy. Replikacja w MySQL jest najbardziej korzystna dla systemów procesujących częste odczyty i rzadkie zapisy.
+
+\begin{figure}[ht]
+%\vspace{-20pt}
+\caption{Replikacja baz danych.}
+\label{replikacja}
+\centering
+\includegraphics[height=9cm, width=15.7cm]{replikacja}
+\end{figure}
+
+Do zalet replikacji MySQL można zaliczyć:
+\begin{itemize}
+\item Skalowalność: w omawianym środowisku, wszyskie operacje zapisu nadal muszą odbywać się na serwerze nadrzędnym, jednak już operacje odczytu - niekoniecznie. Ten model poprawia wydajność obu operacji, jako że wówczas serwer nadrzędny może być oddany jedynie operacjom zapisu, podczas gdy operacje odczytu są rozłożone na serwery podrzędne.
+\item Bezpieczeństwo danych: jako, że dane są powtórzone na serwerach podrzędnych, nie tylko przetrwają one awarię pojedyńczego węzła, ale również jest możliwym wykonywanie kopii zapasowych bez znaczącego wpływu na działanie serwisu.
+\item Analityka: analiza informacji składowanych w bazie danych może odbywać się na jednym z serwerów podrzędnych, wskutek czego serwer nadrzędny pozostaje nieobciążony dodatkową pracą.
+\item Stabilność serwisu: w przypadku awarii serwera nadrzędnego, jeden z serwerów podrzędnych może przejąć jego obowiązki.
+\end{itemize}
+
+\subsubsection{Implementacja}
+Zasada działania replikacji jest oparta o serwer nadrzędny śledzący wszystkie zmiany w bazie danych w dzienniku (ang. log). Dziennik ten zawiera informacje o wszystkich operacjach, które modyfikują strukturę bazy danych lub same dane od momentu, w którym serwer został uruchomiony.
+
+Każdy serwer podrzędny, który łączy się z serwerem nadrzędnym, pobiera z niego kopię wspomnianego dziennika. Na jego podstawie odgrywa wszystkie wydarzenia jakie miały miejsce na  serwerze nadrzędnym, w ten sposób synchronizując się z serwerem nadrzędnym.
+
+Każdy z serwerów podrzędnych jest niezależny od siebie, wskutek czego odczyt logu z serwera nadrzędnego również odbywa się niezależnie. Dzięki temu, każdy z serwerów podrzędnych dokonuje synchronizacji w swoim własnym tempie i częstotliwości, zależnym od parametrów sprzętu i jakości połączenia.
+
+\subsubsection{Więzy spójności}
+Replikacja w systemie MySQL jest domyślnie asynchroniczna, toteż odczyty z węzłów podrzędnych siłą rzeczy muszą być opóźnione. Po zakończeniu transakcji przez serwer nadrzędny musi ona być bowiem zapisana w dzienniku, który później zostanie pobrany przez serwer podrzędny w celu odtworzenia wydarzenia. MySQL zapewnia atomowość operacji - użytkownik może odczytać stare dane, jednak istnieje gwarancja, że będą one spójne. Wymaga to zachowania ostrożności w systemach wymagających odczytu aktualnych danych.
+
+\subsubsection{ProxySQL}
+ProxySQL służy jako pośrednik pomiędzy serwerem MySQL a aplikacjami które sięgają do jego baz danych, jak również rozdziela ruch pomiędzy dostępnymi serwerami. W ten sposób dostarcza aplikacjom jednolity interfejs dostępu do serwerów podrzędnych w celach odczytu danych, nawet w sytuacjach ich częściowej awarii.
+
+\subsection{Zarządzanie instancjami serwisów}
+Wykorzystanie aplikacji Docker pozwala na upewnienie się w łatwy sposób, iż we wszystkich instancjach naszego programu działa jego odpowiednia wersja, a ich restart nie będzie sprawiał trudności. Jednakże w przypadku potrzeby automatyzacji skalowania aplikacji, konieczne jest stworzenie serwisu pełniącego rolę zarządcy. Główne zadania które do niego należą są następujące:
+
+\begin{itemize}
+\item Utrzymanie przez cały czas określonej liczby instancji poszczególnych serwisów. Zawiera się w tym zarówno tworzenie/usuwanie instancji na żądanie, jak i zatrzymywanie oraz uruchamianie nowych w przypadku awarii. W przypadku zmiany wersji obrazu danego serwisu najpierw uruchamiane są dodatkowe instancje zawierające aplikacje w nowej wersji, a następnie wyłączane są poprzednie, tak by zapewnić płynne przejście do nowej wersji. Dodatkowo konieczne jest rozmieszczenie instancji serwisów na udostępnionych dla zarządcy maszynach, tak by odpowiednio rozdysponować dostępne zasoby sprzętowe.
+\item Udostępnienie pod stałym adresem dostępu do danego serwisu oraz odpowiednie zarządzanie zapytaniami, tak by do poszczególnych instancji trafiała optymalna ich liczba.
+\item Przechowywanie zmiennych środowiskowych, które następnie rozprowadzane są do instancji odpowiednich serwisów. Są to m.in. adresy pozostałych serwisów oraz adresy i hasła do odpowiednich baz danych.
+\end{itemize}
+
+Kubernetes spełnia wszystkie z powyższych wymagań - jest to system udostępniony na zasadach open source, przystosowany do wystawiania oraz skalowania aplikacji zawartych w obrazach Docker. Po skonfigurowaniu w prosty sposób można określić, jakie obrazy mają zostać uruchomione, pod jakimi adresami mają zostać udostępnione oraz jaka ma być liczba ich instancji. Poszczególne serwisy komunikują się między sobą w zabezpieczonej sieci wewnętrznej, możliwe jest także skonfigurowanie połączenia między klientem a proxy serwisów z użyciem SSL. Zmienne środowiskowe mogą zostać zapisane w mapie konfiguracji, tak by przykładowo zmiana adresu bazy danych w tejże mapie spowodowała jego zmianę we wszystkich serwisach. Możliwe jest także odczytywanie logów oraz uzyskanie dostępu do konsoli poszczególnych instancji, jednak do zbierania logów ze wszystkich instancji danego serwisu konieczne jest użycie dedykowanych aplikacji (np. Logstash i Kibana).
+
 \section{Rozwiązanie}
 W ramach projektów powstały następujące serwisy:
 
@@ -300,13 +451,13 @@ W ramach projektów powstały następujące serwisy:
 \centering
 \begin{tabular}{|l|l|l|}
 \hline
- Nazwa & Webservice & Panel wildfly \\\hline
+ Nazwa & Webservice & Panel Wildfly \\\hline
  Frontend & localhost:80 & -- \\\hline
  Keycloak & localhost:8080/auth/admin & -- \\\hline
  User-webservice & localhost:8081/user-webservice-rest/api & localhost:9991 \\\hline
  Product-webservice & localhost:8082/product-webservice-rest/api & localhost:9992 \\\hline
  Order-webservice & localhost:8082/order-webservice-rest/api & localhost:9993\\\hline
- Testowy wildfly & localhost:8089/* & localhost:9999 \\\hline
+ Testowy Wildfly & localhost:8089/* & localhost:9999 \\\hline
 \end{tabular}
 \end{table}
 
@@ -328,7 +479,7 @@ User
 }
 \end{lstlisting}
 \vspace{-20pt}
-Obecnie przewidziane są dwie role użytkowników - user oraz admin. ID użytkowników jest reprezentowany przez GUID zgodny ze standardem RFC 4122. Jego wartość jest przekazywana wraz z tokenem dostępu. Jeśli zajdzie konieczność powiązania jakichś danych z użytkownikami w bazach innych serwisów, zapisany zostanie GUID, natomiast dane personalne (w tym nazwa użytkownika) będzie można uzyskać tylko przy komunikacji z serwisem użytkowników.
+Obecnie przewidziane są dwie role użytkowników - user oraz admin. ID użytkowników jest reprezentowany przez GUID zgodny ze standardem RFC 4122. Jego wartość jest przekazywana wraz z tokenem dostępu. Jeśli zajdzie konieczność powiązania jakichś danych z użytkownikami w bazach innych serwisów, zapisany zostanie GUID, natomiast dane personalne (w tym nazwa użytkownika) będzie można uzyskać tylko przy komunikacji z serwisem użytkowników. Hasła są kodowane algorytmem PBKDF2, domyślnie uruchamiając 20 tys. iteracji.
 
 Nazwa użytkownika oraz email są unikalne, wartości pozostałych atrybutów mogą się powtarzać. ID oraz nazwa użytkownika nie mogą być zmieniane. Zarówno id, jak i nazwa roli są unikalne.
 
@@ -343,34 +494,81 @@ Diagram \ref{userDB} przedstawia tabele których dane udostępnia serwis użytko
 \end{figure}
 
 Funkcje udostępniane przez serwis użytkowników zawiera tabela \ref{funkcjeUserWebservice}.
-\begin{table}[htp]
+\begin{table}[ht]
 \caption{Funkcje udostępniane przez serwis użytkowników}
 \label{funkcjeUserWebservice}
 \centering
 %\begin{tabular}{|l|l|l|l|l|l|l|}
-\begin{tabularx}{\textwidth}{|X|c|c|X|X|l|c|}
+\begin{tabularx}{\textwidth}{|X|c|c|X|X|X|c|}
 \hline
  Funkcja & \makecell{Wymagana \\ rola} & Metoda & Adres & Parametry zapytania & Body \\\hline
- Pobierz dane użytkownika & user & GET & /api/users/{userId} & -- & -- \\\hline
- Pobierz dane użytkowników & admin & GET & /api/users & \ref{stdZapytan} (tylko eq/ne/in/lk) & -- \\\hline
-  Dodaj użytkownika & user & POST & /api/users & -- & User \\\hline
+ Pobierz dane użytkownika & user & GET & /api/users /getByToken & -- & -- \\\hline
+ Pobierz dane użytkowników & admin & GET & /api/users & \ref{stdZapytan} \mbox{(tylko eq/ne)} & -- \\\hline
+  %Dodaj użytkownika & user & POST & /api/users & -- & User \\\hline
    Zmień dane użytkownika & user & PUT & /api/users & -- & User \\\hline
-    Przydziel rolę użytkownikowi & admin & PUT & /api/users/{userId} /roles/add & String roleName & -- \\\hline
-     Odbierz rolę użytkownikowi & admin & PUT & /api/users/{userId} /roles/remove & String roleName & -- \\\hline
+    Przydziel rolę użytkownikowi & admin & PUT & /api/users /roles/add & -- & UserRoleTO \\\hline
+     Odbierz rolę użytkownikowi & admin & PUT & /api/users /roles/remove & -- & UserRoleTO \\\hline
       Usuń użytkownika & user & DELETE & /api/users & -- & User \\\hline
-  Ustaw hasło użytkownika & user & PUT & /api/users/{userId} /resetPassword & \makecell{String userId,\\ newPassword} & -- \\\hline
+  Ustaw hasło użytkownika & user & PUT & /api/users /resetPassword & -- & UserResetPasswordTO \\\hline
+  Rejestracja użytkownika & -- & POST & /api/register & -- & UserRegisterTO \\\hline
 \end{tabularx}
 \end{table}
 
 Uwagi dotyczące korzystania z serwisu:
 \begin{enumerate}
+\setlength\itemsep{1.5em}
 \item W przypadku funkcji w których wymagana jest jedynie rola user, dodatkowo w serwisie sprawdzane będzie czy id użytkownika w tokenie podanym przy zapytaniu odpowiada id użytkownika, który ma być odczytany, zmieniony czy usunięty.
-\item W przypadku dodawania użytkownika ignorowane jest pole id oraz roles (id zostanie wygenerowane automatycznie i zwrócone w odpowiedzi).
-\item W przypadku edycji lub usuwania użytkownik identyfikowany jest przez pole id. Przy edycji pola username oraz roles są ignorowane.
+\item W przypadku rejestracji użytkownika ignorowane jest pole id oraz roles (id zostanie wygenerowane automatycznie i zwrócone w odpowiedzi).
+\item W przypadku edycji lub usuwania użytkownik identyfikowany jest przez token, niezależnie od id podanego w obiekcie. Przy edycji pola username oraz roles są ignorowane.
 \item Każdy użytkownik w systemie domyślnie posiada rolę user (od razu po dodaniu).
-\item Po dodaniu nowego użytkownika konieczne jest skorzystanie z funkcji ustawiającego jego hasło, korzystając z id zwróconego w odpowiedzi (w innym przypadku nie jest możliwe logowanie).
+%\item Po dodaniu nowego użytkownika konieczne jest skorzystanie z funkcji ustawiającego jego hasło, korzystając z id zwróconego w odpowiedzi (w innym przypadku nie jest możliwe logowanie).
 \end{enumerate}
 
+Funkcje zarządzające tokenami przedstawia tabela \ref{obslugaTokenow}.
+
+\begin{table}[H]
+\caption{Funkcje do zarządzania tokenami.}
+\label{obslugaTokenow}
+\centering
+%\begin{tabular}{|l|l|l|l|l|l|l|}
+\begin{tabularx}{\textwidth}{|X|c|c|X|X|X|}
+\hline
+ Funkcja & \makecell{Wymagana \\ rola} & Metoda & Adres & Body \\\hline
+ Pobierz token & -- & POST & /api/token/getToken & UserCredentialsTO \\\hline
+ Odśwież token & user & POST & /api/token /refreshToken & RefreshTokenTo \\\hline
+ Wyloguj & user & POST & /api/token/logout & -- \\\hline
+\end{tabularx}
+\end{table}
+
+W przypadku błędnego zapytania zwracany jest status 403.
+Poniżej przedstawione są struktury wykorzystywane do zarządzania tokenami.
+
+\begin{lstlisting}
+UserCredentialsTO
+{
+ "username": "jkowalski",
+ "password": "1234"
+}
+
+RefreshTokenTO 
+{ 
+ "refreshToken":"efdsfi123rd89..." }
+
+UserRegisterTO
+{
+ "user": User
+ "password":"1234"
+}
+
+UserResetPasswordTO
+{
+ "oldPassword": "1234",
+ "newPassword": "12345"
+}
+\end{lstlisting}
+\vspace{-20pt}
+
+\newpage
 \subsection{Serwis produktów}
 Serwis udostępniający dane o produktach i umożliwiający ich dodawanie oraz edycję. Produkt oferowany przez serwis opisany jest następującą strukturą:
 
@@ -420,7 +618,7 @@ ProductCategory: {"productId": 41, "categoryId": 1}
 Kategorie produktów przechowywane są w tabeli Categories:
 
 \begin{lstlisting}
-Category:
+Category: 
 {
 "id": 7,
 "name": "kolejne-poziomy-oddzielane-myslnikami",
@@ -433,11 +631,7 @@ Category:
         {
 			"productId": 2,
 			"categoryId": 7
-        },
-        {
-			"productId": 5,
-			"categoryId": 7
-        },
+        }
             ]
 }
 \end{lstlisting}
@@ -449,29 +643,30 @@ Klasy Product oraz Order odpowiadają schematowi bazy danych (diagram \ref{produ
 
 \begin{figure}[ht]
 %\vspace{-20pt}
-\caption{Schemat bazy danych serwisu użytkowników.}
+\caption{Schemat bazy danych serwisu produktów.}
 \label{productDB}
 \centering
 \includegraphics[height=4.5cm, width=15.7cm]{productDB}
 \end{figure}
 
-Funkcje udostępniane przez serwis produktów zawiera tabela \ref{funkcjeProductWebservice}.
+Funkcje udostępniane przez serwis produktów zawiera tabela \ref{funkcjeProductWebservice}. Parametry "productId" oraz "categoryId" wykorzystywane w zapytaniach są wartościami typu Long.
+
 \begin{table}[htp]
 \caption{Funkcje udostępniane przez serwis produktów}
 \label{funkcjeProductWebservice}
 \centering
 %\begin{tabular}{|l|l|l|l|l|l|l|}
-\begin{tabularx}{\textwidth}{|X|c|X|X|c|c|}
+\begin{tabularx}{\textwidth}{|X|c|X|X|c|}
 \hline
- Funkcja & Metoda & Adres & \makecell{Parametry \\ zapytania} & Body \\\hline
+ Funkcja & Metoda & Adres & Parametry zapytania & Body \\\hline
  Wyszukaj produkty & GET & /api/products & \ref{stdZapytan} & -- \\\hline
  Dodaj produkt & POST & /api/products /add & -- & Product \\\hline
  Dodaj listę produktów & POST & /api/products /addList & -- & List$<$Product$>$ \\\hline
  Zmień wartości atrybutów & PUT & /api/products /update & -- & Product \\\hline
- Dodaj kategorię produktu & PUT & /api/products /updateCategory & \makecell{Long productId, \\ Long categoryId} & -- \\\hline
- Usuń kategorię produktu & DELETE & /api/products /deleteCategory & \makecell{Long productId, \\ Long categoryId} & -- \\\hline
+ Dodaj kategorię produktu & PUT & /api/products /updateCategory & productId, categoryId & -- \\\hline
+ Usuń kategorię produktu & DELETE & /api/products /deleteCategory & productId, categoryId & -- \\\hline
  Usuń listę kategorii produktu & DELETE & /api/products/ deleteCategoryList & -- & \makecell{List \\ $<$ProductCategory$>$} \\\hline
- Usuń produkt & PUT & /api/products /delete & \makecell{Long productId} & -- \\\hline
+ Usuń produkt & PUT & /api/products /delete & productId & -- \\\hline
  Usuń listę produktów & PUT & /api/products /deleteList & -- & List$<$Long$>$ \\\hline
  Wyszukaj kategorie (wraz z listą produktów) & GET & /api/products /getCategory & \ref{stdZapytan} & -- \\\hline
  Wyszukaj wszystkie kategorie (bez listy produktów) & GET & /api/products/ getCategoryNames & -- & -- \\\hline
@@ -487,7 +682,9 @@ Rezerwowanie produktów (podczas obsługi zamówienia) obejmuje sprawdzenie czy 
 \item ilość zamawianego produktu nie może być większa od dostępnej ilości produktu w sklepie. Jeśli klient zażąda zbyt dużej ilości produktu, serwis zamówień zostanie powiadomiony o identyfikatorze takiego produktu oraz aktualnej dostępnej ilości produktu w sklepie.
 \end{enumerate}
 
-Możliwe są wszystkie dopuszczalne kombinacje niespełnienia powyższych warunków, a każda pozycja je naruszająca zostaje zwrócona do serwisu zamówień. W każdym z takich przypadków całe zamówienie nie zostanie potwierdzone jako zaakceptowane przez bazę produktów.
+Możliwe są wszystkie dopuszczalne kombinacje niespełnienia powyższych warunków, a każda pozycja je naruszająca zostaje zwrócona do serwisu zamówień. W każdym z takich przypadków całe zamówienie nie zostanie potwierdzone jako zaakceptowane przez bazę produktów. 
+
+Poniżej przedstawiona jest pozycja zamówienia sprawdzana podczas obsługi zamówienia:
 
 \begin{lstlisting}
 OrderPosition:
@@ -498,6 +695,19 @@ OrderPosition:
 }
 \end{lstlisting}
 \vspace{-20pt}
+
+Kategorie produktów opisuje struktura:
+\begin{lstlisting}
+ProductCategory:
+{
+	"productId": 7,
+    "categoryId": 1
+}
+\end{lstlisting}
+\vspace{-20pt}
+
+
+\newpage
 \subsection{Serwis zamówień}
 Serwis realizujący obsługę zamówień; ich składanie, edycję, dostęp oraz anulowanie. Zamówienia opisane są następującą strukturą:
 
@@ -516,7 +726,7 @@ Order:
 }
 \end{lstlisting}
 \vspace{-20pt}
-Kluczem głównym w tabeli "Order" jest pole "id". Jest to wartość typu Long, której wartość jest generowana automatycznie (dlatego nie została podana powyżej). Pole "userId" jest identyfikatorem użytkownika. Kolejne trzy wartości reprezentują określone stany, w którym może się znaleźć zamówienie. Zostały one opisane w tabeli poniżej. 
+Kluczem głównym w tabeli "Order" jest pole "id". Jest to wartość typu Long, której wartość jest generowana automatycznie (dlatego nie została podana powyżej). Pole "userId" jest identyfikatorem użytkownika. Jego wartość jest pobierana z token'a i odpowiednio ustawiana. W związku z tym, nie jest możliwe ustawienie tego pola na dowolną wartość. Kolejne trzy wartości reprezentują określone stany, w którym może się znaleźć zamówienie. Zostały one opisane w tabeli \ref{stanyZamowienia}. 
 
 \begin{table}[htp]
 \caption{Stany zamówienia.}
@@ -535,6 +745,7 @@ Kluczem głównym w tabeli "Order" jest pole "id". Jest to wartość typu Long, 
 
 Zamówienie zawiera listę  pozycji  "productsList", na podstawie której tworzone są elementy reprezentujące kolejne pozycje tabeli "OrderProduct". Każdy z produktów zawiera pola:
 \begin{itemize}
+\setlength\itemsep{1.3em}
 \item "orderId" - reprezentuje numer zamówienia (wartość nie podawana podczas tworzenia zamówienia ("orderId" przyjmuje tą samą wartość co "id")), część klucza głównego tabeli "OrderProduct", wartość Long.
 \item "productId" - reprezentuje identyfikator produktu, część klucza głównego tabeli "OrderProduct", wartość Long
 \item "quantity" - reprezentuje ilość zamawianego produktu, wartość Long 
@@ -542,14 +753,12 @@ Zamówienie zawiera listę  pozycji  "productsList", na podstawie której tworzo
 \end{itemize}
 
 Poniżej zostaje przedstawiona reprezentacja pojedynczego wiersza w formacie JSON tabeli "OrderProduct":
+\vspace{+30pt}
 
 \begin{lstlisting}
 OrderProduct:
 {
-	"orderId": 2137,
-    "productId": 1,
-    "price": 2.49,
-    "quantity": 30,
+	"orderId": 2137, "productId": 1, "price": 2.49, "quantity": 30 
 }
 \end{lstlisting}
 \vspace{-20pt}
@@ -559,17 +768,17 @@ Funkcje udostępniane przez serwis zamówień zawiera tabela \ref{funkcjeOrderWe
 \caption{Funkcje udostępniane przez serwis zamówień.}
 \label{funkcjeOrderWebservice}
 \centering
-\begin{tabularx}{\textwidth}{|X|c|X|X|c|c|}
+\begin{tabularx}{\textwidth}{|X|c|X|X|}
 \hline
- Funkcja & Metoda & Adres & \makecell{Parametry \\ zapytania} & Body \\\hline
- Stwórz zamówienie & POST & /api/orders /makeOrder & -- & Order \\\hline
- Edytuj dane zamówienia & PUT & /api/orders /editOrder & -- & Order \\\hline
- Edytuj pozycję zamówienia & PUT & /api/orders /editOrderProduct & -- & OrderProduct \\\hline
- Edytuj listę pozycji zamówienia & PUT & /api/orders /editOrderProductList & -- & \makecell{List \\ $<$OrderProduct$>$} \\\hline
- Anuluj zamówienie & DELETE & /api/orders /cancelOrder & Long orderId & -- \\\hline
- Anuluj pozycję zamówienia & DELETE & /api/orders /cancelOrderProduct & \makecell{Long orderId, \\ Long productId} & -- \\\hline
- Wyszukaj zamówienia & GET & /api/orders /{userId} & -- & -- \\\hline
- Wyszukaj zamówienie & GET & /api/orders /{userId}/orderId & \makecell{Long orderId} & -- \\\hline
+ Funkcja & Metoda & Adres & Body \\\hline
+ Stwórz zamówienie & POST & /api/orders /addOrder & Order \\\hline
+ Edytuj dane zamówienia & PUT & /api/orders /editOrder & Order \\\hline
+ Edytuj pozycję zamówienia & PUT & /api/orders /editOrderProduct & OrderProduct \\\hline
+ %Edytuj listę pozycji zamówienia & PUT & /api/orders /editOrderProductList & \makecell{--} & \makecell{List \\ $<$OrderProduct$>$} \\\hline
+ Anuluj zamówienie & DELETE & /api/orders /cancelOrder/\{orderId\} & -- \\\hline
+ Anuluj pozycję zamówienia & DELETE & /api/orders /cancelOrderProduct /\{orderId\}/\{productId\} & -- \\\hline
+ Wyszukaj zamówienia & GET & /api/orders/orders & -- \\\hline
+ %Wyszukaj zamówienie & GET & /api/orders /\{userId\}/orderId & \makecell{Long orderId} & -- \\\hline
 \end{tabularx}
 \end{table}
 
@@ -584,19 +793,104 @@ Schemat bazy danych serwisu zamówień zawiera diagram \ref{ordertDB}.
 \end{figure}
 
 %\vspace*{2\baselineskip}
-Dodatkowe uwagi:
+%Dodatkowe uwagi:
+%\begin{enumerate}
+%\item pole "orderId" jest generowane automatycznie
+%\item żadne pole OrderProduct nie może być null'em - w przeciwnym wypadku odpowiedź od serwisu produktów nie pozwoli na utworzenie takiego zapytania
+%\end{enumerate}
+
+Przykłady zapytań:
 \begin{enumerate}
-\item pole "orderId" jest generowane automatycznie
-\item żadne pole OrderProduct nie może być null'em - w przeciwnym wypadku odpowiedź od serwisu produktów nie pozwoli na utworzenie takiego zapytania
+\item Dodawanie zamówienia:
+\begin{lstlisting}
+{
+    "productsList": 
+    [
+    	{ 
+    		"productId": 1, "price": 2.49, "quantity": 5 
+    	},
+        {
+            "productId": 2, "price": 2.99, "quantity": 2
+        }           
+    ]
+}
+\end{lstlisting}
+\vspace{-20pt}
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- zamówienie zostało poprawnie dodane
+\item 206 -- niepoprawne wartości produktów
+\item 400 -- otrzymany JSON jest pusty lub niepełny
+\item 401 -- błąd wewnętrzny
+\end{itemize}
+
+\item Edycja zamówienia:
+\begin{lstlisting}
+{
+	"id": 3,
+    "completed": true,
+    "productsList": 
+    [
+    	{ "orderId":3, "productId": 1, "price": 2.49, "quantity": 33 },
+        { "orderId":3, "productId": 2, "price": 2.99, "quantity": 0 }
+    ]
+}
+\end{lstlisting}
+\vspace{-20pt}
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- zamówienie zostało poprawnie zmodyfikowane
+\item 400 -- błąd dostępu
+\item 401 -- błąd wewnętrzny
+\end{itemize}
+Pola boolean, czyli "completed", "paid", "beingProcessed" są nieobowiązkowe i służą do zmiany stanu zamówienia. Domyślnie mają wartość false. Mogą one zostać podane, by zmienić stan, które aktualnie reprezentują.
+
+\item Edycja pozycji zamówienia:
+\begin{lstlisting}
+{
+        "orderId":3,
+        "productId": 1,
+        "price": 2.49,
+        "quantity": 33
+}
+\end{lstlisting}
+\vspace{-20pt}
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- pozycja zamówienia została poprawnie zmodyfikowana
+\item 401 -- błąd wewnętrzny / autoryzacji
+\item 406 -- jeden z atrybutów jest nieaktualny lub nie został podany
+\end{itemize}
+\item Usuwanie zamówienia:
+Parametr ścieżki ("orderId") jest wartością typu Long. Jeżeli wartość zmiennych "completed" oraz "beingProcessed"  to zamówienie może zostać anulowane.
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- zamówienie zostało poprawnie usunięte
+\item 401 -- błąd wewnętrzny / autoryzacji
+\item 403 -- zmówienie nie może zostać usunięte
+\end{itemize}
+\item Usuwanie pozycji zamówienia:
+Parametry ścieżki ("orderId" oraz "productId") są wartościami typu Long.
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- pozycja zamówienia została usunięta
+\item 401 -- błąd wewnętrzny
+\item 403 -- pozycja zamówienia nie może zostać usunięta
+\end{itemize}
+\item Pobieranie listy zamówień danego użytkownika:
+Zwraca wszystkie zamówienia danego użytkownika.
+Kody odpowiedzi:
+\begin{itemize}
+\item 200 -- poprawne zapytanie
+\item 403 -- błąd wewnętrzny / autoryzacji
+\end{itemize}
 \end{enumerate}
-
-
 
 
 %\clearpage
 \newpage
 \subsection{Frontend}
-Interfejs graficzny sklepu zostanie zrealizowany jako stron a internetowa pozwalająca na interakcję użytkowników z systemem. Pozwala klientom na logowanie, wylogowanie oraz rejestrację. Do realizacji zostaną wykorzystane biblioteki oraz framework Vue.js, Vuex, Bootstrap, Bootstrap Vue, npm i vue-sessionstorage.
+Interfejs graficzny sklepu zostanie zrealizowany jako strona internetowa pozwalająca na interakcję użytkowników z systemem. Pozwala klientom na logowanie, wylogowanie oraz rejestrację. Do realizacji zostaną wykorzystane biblioteki oraz framework Vue.js, Vuex, Bootstrap, Bootstrap Vue, npm i vue-sessionstorage.
 
 \begin{figure}[] 
   %\label{ fig7} 
@@ -666,7 +960,7 @@ Strony internetowe wykorzystujące framework Vue.js zbudowane są z zagnieżdżo
 \includegraphics[height=6.5cm, width=15.7cm]{FRONTEND_UML}
 \end{figure}
 
-\newpage
+%\newpage
 %\subsection{Specyfikacja sprzętu i oprogramowania}
 %\color{red}
 %Na czym system powinien stać (sprzęt), systemy operacyjne, BD, przeglądarki internetowe
@@ -715,138 +1009,7 @@ Przykładowe zapytanie do serwisu produktów:
 zwróci 25 pierwszych produktów, których w sklepie jest więcej niż 0 sztuk, ich cena jest większa od 5.00, a także mniejsza lub równa 15.45. Będą one posortowane rosnąco.
 
 %W czym piszemy system? Słówko o dockerach, front/back-end, administracja systemem
-\section{Właściwości niezawodności i bezpieczeństwa}
-\subsection{Keycloak}
-Keycloak jest oprogramowaniem open source, zajmującym się obsługą zarządzania danymi użytkowników oraz ich autoryzacji w serwisach. Dodatkowymi funkcjonalnościami udostępnianymi przez program jest możliwość skonfigurowania federacji użytkowników (np. synchronizacja z bazą użytkowników LDAP), a także ustalenia tożsamości na podstawie tokenów otrzymanych przez inne systemy autoryzacyjne (np. Kerberos). Autoryzacja w Keycloak'u bazuje na protokołach OpenID Connect, OAuth 2.0 lub SAML. 
 
-\subsubsection{Autoryzacja przy pomocy tokenów OpenID}
-
-Standardową formą autoryzacji jest stworzenie lokalnej bazy dla danych użytkowników, z których następnie korzystać będzie aplikacja. Problemem, który stwarza to rozwiązanie jest oczywiście konieczność stworzenia oddzielnego konta dla użytkownika w każdej z naszych aplikacji. Oznacza to nie tylko konieczność utrzymania wszystkich instancji baz danych, ale jest także nużące dla samego użytkownika. Dodatkowo, ponieważ dane użytkownika powielone są w wielu miejscach, trudno jest zapewnić, iż nie będą miały do nich dostępu osoby niepowołane, a usunięcie danych z każdej z baz także nie byłoby trywialnym zadaniem.
-
-Intuicyjnym rozwiązaniem, adresującym te problemy, jest stworzenie centralnej bazy użytkowników, z której korzystać będą wszystkie nasze aplikacje. Jednakże udzielenie bezpośredniego dostępu do jednej bazy danych wielu aplikacjom, których implementacje korzystania z niej mogą się różnić, także nie wydaje się być zbyt atrakcyjne, szczególnie w przypadku tak wrażliwych danych. Zamiast tego wykorzystuje się wyspecjalizowane serwisy, odpowiadające za autoryzację oraz zarządzanie danymi użytkowników. Można zadać sobie pytanie, czy tego typu rozwiązanie nie powoduje stworzenia pojedynczego modułu, którego awaria spowoduje brak możliwości dostępu do wszystkich aplikacji. By temu zapobiec należy zapewnić jego redundancję, co można osiągnąć wykorzystując tokeny OIDC.
-
-W ogólności rozwiązanie to wygląda następująco - do serwisu zarządzającego danymi użytkownika wysyłane jest żądanie, w którym zawierane są informacje pozwalające potwierdzić jego tożsamość (standardowo nazwa użytkownika oraz hasło). W odpowiedzi zwracany jest token, zakodowany zgodnie ze standardem RFC 7519 (JSON Web Token) i podpisany przez wystawiający go serwis, który zawiera w sobie m.in. dane o tożsamości jego posiadacza,  jednostce wydającej token oraz czasie jego ważności. Token może następnie posłużyć do stwierdzenia czy użytkownik posiada dostęp do żądanych przez niego zasobów. Ponieważ może on też być przekazywany dalej do innych aplikacji, nie ma konieczności oddzielnego logowania użytkownika w każdej z nich, o ile wszystkie są skonfigurowane tak, by móc połączyć się z serwisem zarządzającym autoryzacją i potwierdzić autentyczność tokena.
-
-Przy wykorzystaniu tokenów nie mamy więc do czynienia ze standardową sesją, której dane są przechowywane na serwerze - użytkownik autoryzowany jest poprzez sprawdzenie tokena zapisanego w pamięci, który może być używany do czasu jego wygaśnięcia. Dopóki token nie zostanie przedawniony, możliwe jest jego odświeżenie, czego obsługą zajmuje się serwer aplikacji (zakładając, iż użytkownik cały czas z niej korzysta).
-
-Serwisem zarządzającym danymi użytkowników oraz obsługującego wystawianie tokenów jest w naszym projekcie Keycloak. Jako oprogramowanie open source, może on zostać użyty do zapewnienia bezpieczeństwa bez konieczności zakupu bardziej kosztownych rozwiązań, a równocześnie z pewnością użycie go jest preferowane w stosunku do alternatywy, którą byłaby konieczność samodzielnej implementacji tego typu serwisu. Ponieważ należy on do grupy projektów firmy RedHat, daje to nadzieję, iż będzie on wciąż rozwijany i dostosowywany do aktualnych potrzeb na rynku. Dodatkową zaletą jest aktualizowany regularnie przez twórców obraz Docker, co zdecydowanie ułatwia instalację oraz utrzymanie.
-
-\subsubsection{Keycloak w kontekście RODO}
-
-Część z zalet, które skłaniają do wykorzystania serwisu Keycloak w kontekście RODO została już podana w poprzedniej części. Przede wszystkim ustalenie centralnej bazy użytkowników i jednego punktu dostępu pozwala na dokładną kontrolę tego czy są one odpowiednio przechowywane oraz czy dostęp do nich mają jedynie odpowiednie jednostki. Przy pobieraniu czy sprawdzaniu tokena nie są w żaden sposób przesyłane prywatne dane użytkowników - są one udostępniane jedynie na żądanie. Hasła użytkowników są haszowane, a inne serwisy w razie potrzeby powiązania użytkowników np. z zamówieniami używają w tym celu GUID, który jest zgodny ze standardem RFC 4122. Ponieważ identyfikator ten w tabelach poszczególnych serwisów nie jest kluczem obcym, możliwe jest usunięcie użytkownika bez naruszania ich działania (konieczne jest jedynie obsłużenie wyświetlenia komunikatu o braku danego użytkownika w bazie danych), udostępniona jest także możliwość edycji jego danych personalnych. Keycloak może też zostać łatwo skonfigurowany tak by wykorzystywać przy transferze danych certyfikaty SSL.
-
-\subsubsection{Użytkowanie w projekcie}
-
-W ramach konfiguracji należy zdefiniować dla każdego z serwisów klienta, dla którego wygenerowany zostanie secret w postaci guida (przykładowo e7b70cf3-8d73-466b-8592-b8cfea69f704). Każdy z serwisów łączyć się będzie ze swoim klientem, podając odpowiedni secret.
-
-Autoryzacja użytkowników w serwisach przebiegać będzie następująco:
-\begin{enumerate}
-\item Przy logowaniu użytkownika, do serwera Keycloak wysyłane jest zapytanie wraz z podanymi loginem oraz hasłem użytkownika. W odpowiedzi zwracany jest token JWT, w którym zawierana jest m.in. informacja o id użytkownika, posiadanych przez niego rolach, oraz czasie wygaśnięcia tokena. Dodatkowo podawany jest refresh token, który pozwoli pobrać nowy token dostępu dla tego samego użytkownika, o ile zostanie podany przed czasem wygaśnięcia (w innym przypadku konieczne jest ponowne zalogowanie przez użytkownika).
-\item Otrzymany token jest podawany w zapytaniach do serwisów (w nagłówku Authorization). W serwisach sprawdzane jest, czy token nie wygasł, został wystawiony przez odpowiedniego wystawcę oraz (na podstawie ról) czy użytkownik ma dostęp do danego zasobu. W razie potrzeby możliwe jest dodanie ręcznie zdefiniowanych pól w tokenie, które następnie mogą być sprawdzone w samym serwisie.
-\item W przypadku gdy konieczna jest komunikacja między serwisami, przekazują one dalej w zapytaniach otrzymany token.
-\end{enumerate}
-
-Przykład pobierania tokena przedstawia rysunek \ref{pobieranieTokena}. Na diagramie \ref{zapytanieZTokenem} widać wysyłanie zapytania z tokenem w nagłówku.
-
-\begin{figure}[ht]
-%\vspace{-20pt}
-\caption{Zapytanie pobierające token.}
-\label{pobieranieTokena}
-\centering
-\includegraphics[height=8.cm, width=15.7cm]{requestForToken}
-\end{figure}
-
-\begin{figure}[ht]
-%\vspace{-20pt}
-\caption{Zapytanie zawierające token w nagłówku.}
-\label{zapytanieZTokenem}
-\centering
-\includegraphics[height=9cm, width=15.7cm]{requestWithToken}
-\end{figure}
-
-Poniżej przedstawiony jest plik konfiguracyjny w serwisie (keycloak.json):
-
-\begin{lstlisting}
-{
-  "realm": "rso",
-  "auth-server-url": "http://192.168.99.100:8080/auth",
-  "ssl-required": "external",
-  "resource": "rso-user-webservice",
-  "credentials": {
-    "secret": "e7b70cf3-8d73-466b-8592-b8cfea69f704"
-  }
-}
-\end{lstlisting}
-\vspace{-20pt}
-Konfiguracja pliku web.xml tak, aby konieczne było posiadanie roli user w celu uzyskania dostępu do dowolnego REST-a:
-
-\begin{lstlisting}
-<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
-
-    <login-config>
-        <auth-method>KEYCLOAK</auth-method>
-    </login-config>
-
-    <security-role>
-        <role-name>user</role-name>
-    </security-role>
-
-    <security-constraint>
-        <web-resource-collection>
-            <web-resource-name>user-webservice</web-resource-name>
-            <url-pattern>/*</url-pattern>
-        </web-resource-collection>
-        <auth-constraint>
-            <role-name>user</role-name>
-        </auth-constraint>
-    </security-constraint>
-</web-app>
-\end{lstlisting}
-\vspace{-20pt}
-\subsection{Replikacja baz danych}
-Serwisy stworzone w projekcie wykorzystują bazy danych MySQL. Replikacja w MySQL pozwala na odwzorowanie danych z nadrzędnego serwera bazodanowego (ang. master) na jeden lub wiele podrzędnych serwerów (ang. slave). Replikacja domyślnie odbywa się asynchronicznie, dzięki czemu serwery podrzędne nie muszą być podłączone permanentnie, aby otrzymywać aktualizacje. To sprawia, że replikacja może odbywać się na dalekich dystansach, bądź też przez tymczasowe lub ulotne połączenie. W zależności od konfiguracji, replikacja może dotyczyć wszystkich baz danych, wybranych, a nawet konkretnych tabel wewnątrz bazy. Replikacja w MySQL jest najbardziej korzystna dla systemów procesujących częste odczyty i rzadkie zapisy.
-
-\begin{figure}[ht]
-%\vspace{-20pt}
-\caption{Replikacja baz danych.}
-\label{replikacja}
-\centering
-\includegraphics[height=9cm, width=15.7cm]{replikacja}
-\end{figure}
-
-Do zalet replikacji MySQL można zaliczyć:
-\begin{itemize}
-\item Skalowalność: w omawianym środowisku, wszyskie operacje zapisu nadal muszą odbywać się na serwerze nadrzędnym, jednak już operacje odczytu - niekoniecznie. Ten model poprawia wydajność obu operacji, jako że wówczas serwer nadrzędny może być oddany jedynie operacjom zapisu, podczas gdy operacje odczytu są rozłożone na serwery podrzędne.
-\item Bezpieczeństwo danych: jako, że dane są powtórzone na serwerach podrzędnych, nie tylko przetrwają one awarię pojedyńczego węzła, ale również jest możliwym wykonywanie kopii zapasowych bez znaczącego wpływu na działanie serwisu.
-\item Analityka: analiza informacji składowanych w bazie danych może odbywać się na jednym z serwerów podrzędnych, wskutek czego serwer nadrzędny pozostaje nieobciążony dodatkową pracą.
-\item Stabilność serwisu: w przypadku awarii serwera nadrzędnego, jeden z serwerów podrzędnych może przejąć jego obowiązki.
-\end{itemize}
-
-\subsubsection{Implementacja}
-Zasada działania replikacji jest oparta o serwer nadrzędny śledzący wszystkie zmiany w bazie danych w dzienniku (ang. log). Dziennik ten zawiera informacje o wszystkich operacjach, które modyfikują strukturę bazy danych lub same dane od momentu, w którym serwer został uruchomiony.
-
-Każdy serwer podrzędny, który łączy się z serwerem nadrzędnym, pobiera z niego kopię wspomnianego dziennika. Na jego podstawie odgrywa wszystkie wydarzenia jakie miały miejsce na  serwerze nadrzędnym, w ten sposób synchronizując się z serwerem nadrzędnym.
-
-Każdy z serwerów podrzędnych jest niezależny od siebie, wskutek czego odczyt logu z serwera nadrzędnego również odbywa się niezależnie. Dzięki temu, każdy z serwerów podrzędnych dokonuje synchronizacji w swoim własnym tempie i częstotliwości, zależnym od parametrów sprzętu i jakości połączenia.
-
-\subsubsection{Więzy spójności}
-Replikacja w systemie MySQL jest domyślnie asynchroniczna, toteż odczyty z węzłów podrzędnych siłą rzeczy muszą być opóźnione. Po zakończeniu transakcji przez serwer nadrzędny musi ona być bowiem zapisana w dzienniku, który później zostanie pobrany przez serwer podrzędny w celu odtworzenia wydarzenia. MySQL zapewnia atomowość operacji - użytkownik może odczytać stare dane, jednak istnieje gwarancja, że będą one spójne. Wymaga to zachowania ostrożności w systemach wymagających odczytu aktualnych danych.
-
-\subsubsection{ProxySQL}
-ProxySQL służy jako pośrednik pomiędzy serwerem MySQL a aplikacjami które sięgają do jego baz danych, jak również rozdziela ruch pomiędzy dostępnymi serwerami. W ten sposób dostarcza aplikacjom jednolity interfejs dostępu do serwerów podrzędnych w celach odczytu danych, nawet w sytuacjach ich częściowej awarii.
-
-\subsection{Zarządzanie instancjami serwisów}
-Wykorzystanie aplikacji Docker pozwala na upewnienie się w łatwy sposób, iż we wszystkich instancjach naszego programu działa jego odpowiednia wersja, a ich restart nie będzie sprawiał trudności. Jednakże w przypadku potrzeby automatyzacji skalowania aplikacji, konieczne jest stworzenie serwisu pełniącego rolę zarządcy. Główne zadania które do niego należą są następujące:
-
-\begin{itemize}
-\item Utrzymanie przez cały czas określonej liczby instancji poszczególnych serwisów. Zawiera się w tym zarówno tworzenie/usuwanie instancji na żądanie, jak i zatrzymywanie oraz uruchamianie nowych w przypadku awarii. W przypadku zmiany wersji obrazu danego serwisu najpierw uruchamiane są dodatkowe instancje zawierające aplikacje w nowej wersji, a następnie wyłączane są poprzednie, tak by zapewnić płynne przejście do nowej wersji. Dodatkowo konieczne jest rozmieszczenie instancji serwisów na udostępnionych dla zarządcy maszynach, tak by odpowiednio rozdysponować dostępne zasoby sprzętowe.
-\item Udostępnienie pod stałym adresem dostępu do danego serwisu oraz odpowiednie zarządzanie zapytaniami, tak by do poszczególnych instancji trafiała optymalna ich liczba.
-\item Przechowywanie zmiennych środowiskowych, które następnie rozprowadzane są do instancji odpowiednich serwisów. Są to m.in. adresy pozostałych serwisów oraz adresy i hasła do odpowiednich baz danych.
-\end{itemize}
-
-Kubernetes spełnia wszystkie z powyższych wymagań - jest to system udostępniony na zasadach open source, przystosowany do wystawiania oraz skalowania aplikacji zawartych w obrazach Docker. Po skonfigurowaniu w prosty sposób można określić, jakie obrazy mają zostać uruchomione, pod jakimi adresami mają zostać udostępnione oraz jaka ma być liczba ich instancji. Poszczególne serwisy komunikują się między sobą w zabezpieczonej sieci wewnętrznej, możliwe jest także skonfigurowanie połączenia między klientem a proxy serwisów z użyciem SSL. Zmienne środowiskowe mogą zostać zapisane w mapie konfiguracji, tak by przykładowo zmiana adresu bazy danych w tejże mapie spowodowała jego zmianę we wszystkich serwisach. Możliwe jest także odczytywanie logów oraz uzyskanie dostępu do konsoli poszczególnych instancji, jednak do zbierania logów ze wszystkich instancji danego serwisu konieczne jest użycie dedykowanych aplikacji (np. Logstash i Kibana).
 
 \section{Organizacja projektu}
 \subsection{Możliwe rozszerzenia}
@@ -885,7 +1048,9 @@ Obecnie istniejące serwisy przygotowane są w taki sposób by obsługa zamówie
  05.04.2018 & Utworzenie repozytorium kodu na potrzebę projektu, rozpoczęcie wstępnych implementacji serwisów \\\hline
  19.04.2018 & Pierwsze próby doprecyzowanie interfejsów serwisów i wyglądu aplikacji użytkowej \\\hline
  26.04.2018 & Szczegółowy opis wykorzystywanych narzędzi i technologii \\\hline
- 06.05.2018 & Redakcja i edycja dokumentacji \\\hline
+ 06.05.2018 & Redakcja i edycja dokumentacji etapu pierwszego\\\hline
+ 01.06.2018 & Rozpoczęcie integracji serwisów \\\hline
+ 07.06.2018 & Redakcja dokumentacji końcowej\\\hline
 \end{tabularx}
 \end{table}
 
