@@ -261,7 +261,7 @@ Zidentyfikowano następujące przypadki użycia systemu:
 
 \begin{figure}[ht]
 %\vspace{-20pt}
-\caption{Diagram klas}
+\caption{Diagram klas systemu.}
 \label{diagramKlas}
 \centering
 \includegraphics[height=8.4cm, width=15.7cm]{Klasy}
@@ -419,17 +419,20 @@ Do zalet replikacji MySQL można zaliczyć:
 \end{itemize}
 
 \subsubsection{Implementacja}
-Zasada działania replikacji jest oparta o serwer nadrzędny śledzący wszystkie zmiany w bazie danych w dzienniku (ang. log). Dziennik ten zawiera informacje o wszystkich operacjach, które modyfikują strukturę bazy danych lub same dane od momentu, w którym serwer został uruchomiony.
+Zasada działania replikacji jest oparta o serwer nadrzędny odnotowujący wszystkie zmiany w bazie danych w dzienniku (ang. log). Dziennik ten zawiera informacje o wszystkich operacjach, które modyfikują strukturę bazy danych lub same dane od momentu, w którym serwer został uruchomiony.
 
 Każdy serwer podrzędny, który łączy się z serwerem nadrzędnym, pobiera z niego kopię wspomnianego dziennika. Na jego podstawie odgrywa wszystkie wydarzenia jakie miały miejsce na  serwerze nadrzędnym, w ten sposób synchronizując się z serwerem nadrzędnym.
 
 Każdy z serwerów podrzędnych jest niezależny od siebie, wskutek czego odczyt logu z serwera nadrzędnego również odbywa się niezależnie. Dzięki temu, każdy z serwerów podrzędnych dokonuje synchronizacji w swoim własnym tempie i częstotliwości, zależnym od parametrów sprzętu i jakości połączenia.
 
 \subsubsection{Więzy spójności}
-Replikacja w systemie MySQL jest domyślnie asynchroniczna, toteż odczyty z węzłów podrzędnych siłą rzeczy muszą być opóźnione. Po zakończeniu transakcji przez serwer nadrzędny musi ona być bowiem zapisana w dzienniku, który później zostanie pobrany przez serwer podrzędny w celu odtworzenia wydarzenia. MySQL zapewnia atomowość operacji - użytkownik może odczytać stare dane, jednak istnieje gwarancja, że będą one spójne. Wymaga to zachowania ostrożności w systemach wymagających odczytu aktualnych danych.
+Replikacja w systemie MySQL jest domyślnie asynchroniczna, toteż odczyty z węzłów podrzędnych siłą rzeczy muszą być opóźnione. Po zakończeniu transakcji przez serwer nadrzędny musi ona być bowiem zapisana w dzienniku, który później zostanie pobrany przez serwer podrzędny w celu odtworzenia wydarzenia. MySQL zapewnia atomowość operacji - użytkownik może odczytać nieaktualne dane, jednak istnieje gwarancja ich spójności. Wymaga to zachowania ostrożności w systemach wymagających odczytu aktualnych danych. Dodatkowo, w celu rozwiązania sytuacji, w której serwer nadrzędny ulegnie awarii już po zapisaniu operacji do dziennika, jednak przed tym, jak którykolwiek z serwerów podrzędnych zdąży go odczytać, MySQL wspiera koncepcję półsynchronicznej (ang. semisynchronous) replikacji, zgodnie z którą serwer nadrzędny będzie czekał, aż wskazana liczba serwerów podrzędnych odczyta dziennik.
 
 \subsubsection{ProxySQL}
-ProxySQL służy jako pośrednik pomiędzy serwerem MySQL a aplikacjami które sięgają do jego baz danych, jak również rozdziela ruch pomiędzy dostępnymi serwerami. W ten sposób dostarcza aplikacjom jednolity interfejs dostępu do serwerów podrzędnych w celach odczytu danych, nawet w sytuacjach ich częściowej awarii.
+ProxySQL służy jako pośrednik pomiędzy serwerem MySQL a aplikacjami które sięgają do jego baz danych, jak również rozdziela ruch pomiędzy dostępnymi serwerami. W ten sposób dostarcza aplikacjom jednolity interfejs dostępu do serwerów podrzędnych w celach odczytu danych, nawet w sytuacjach ich częściowej awarii. ProxySQL udostępnia opcje zapisywania wyników czasochłonnych operacji, przepisywania, bądź blokowania wskazanych zapytań, oraz monitorowania stanu serwerów.
+
+\subsection{Wysoka niezawodność}
+Awaria serwera nadrzędnego czyni system niezdolnym do obsługi operacji zapisu. Aby zminimalizować czas, w którym baza danych nie działa w pełni, posłużono się projektem Master High Availability Manager (\href{https://github.com/yoshinorim/mha4mysql-manager}{GitHub - yoshinorim/mha4mysql-manager}). Jego zadaniem jest, w razie awarii, wybrać serwer podrzędny o jak najmniejszym opóźnieniu i dostosować go do pracy w trybie serwera nadrzędnego, minimalizując czas przestoju, a także, poprzez opcje w konfiguracji, wysłanie niezbędnego powiadomienia.
 
 \subsection{Zarządzanie instancjami serwisów}
 Wykorzystanie aplikacji Docker pozwala na upewnienie się w łatwy sposób, iż we wszystkich instancjach naszego programu działa jego odpowiednia wersja, a ich restart nie będzie sprawiał trudności. Jednakże w przypadku potrzeby automatyzacji skalowania aplikacji, konieczne jest stworzenie serwisu pełniącego rolę zarządcy. Główne zadania które do niego należą są następujące:
@@ -516,7 +519,7 @@ Funkcje udostępniane przez serwis użytkowników zawiera tabela \ref{funkcjeUse
 
 Uwagi dotyczące korzystania z serwisu:
 \begin{enumerate}
-\setlength\itemsep{1.5em}
+%\setlength\itemsep{1.5em}
 \item W przypadku funkcji w których wymagana jest jedynie rola user, dodatkowo w serwisie sprawdzane będzie czy id użytkownika w tokenie podanym przy zapytaniu odpowiada id użytkownika, który ma być odczytany, zmieniony czy usunięty.
 \item W przypadku rejestracji użytkownika ignorowane jest pole id oraz roles (id zostanie wygenerowane automatycznie i zwrócone w odpowiedzi).
 \item W przypadku edycji lub usuwania użytkownik identyfikowany jest przez token, niezależnie od id podanego w obiekcie. Przy edycji pola username oraz roles są ignorowane.
@@ -545,30 +548,20 @@ Poniżej przedstawione są struktury wykorzystywane do zarządzania tokenami.
 
 \begin{lstlisting}
 UserCredentialsTO
-{
- "username": "jkowalski",
- "password": "1234"
-}
+{ "username": "jkowalski", "password": "1234" }
 
 RefreshTokenTO 
-{ 
- "refreshToken":"efdsfi123rd89..." }
+{ "refreshToken":"efdsfi123rd89..." }
 
 UserRegisterTO
-{
- "user": User
- "password":"1234"
-}
+{ "user": User, "password":"1234" }
 
 UserResetPasswordTO
-{
- "oldPassword": "1234",
- "newPassword": "12345"
-}
+{ "oldPassword": "1234", "newPassword": "12345" }
 \end{lstlisting}
 \vspace{-20pt}
 
-\newpage
+%\newpage
 \subsection{Serwis produktów}
 Serwis udostępniający dane o produktach i umożliwiający ich dodawanie oraz edycję. Produkt oferowany przez serwis opisany jest następującą strukturą:
 
@@ -623,16 +616,11 @@ Category:
 "id": 7,
 "name": "kolejne-poziomy-oddzielane-myslnikami",
 "categoryOrder": "2.0",
-"products": [
-		{
-			"productId": 1,
-            "categoryId": 7
-		},
-        {
-			"productId": 2,
-			"categoryId": 7
-        }
-            ]
+"products": 
+  [
+		{ "productId": 1, "categoryId": 7 },
+        { "productId": 2, "categoryId": 7 }
+  ]
 }
 \end{lstlisting}
 \vspace{-20pt}
@@ -699,10 +687,7 @@ OrderPosition:
 Kategorie produktów opisuje struktura:
 \begin{lstlisting}
 ProductCategory:
-{
-	"productId": 7,
-    "categoryId": 1
-}
+{ "productId": 7, "categoryId": 1 }
 \end{lstlisting}
 \vspace{-20pt}
 

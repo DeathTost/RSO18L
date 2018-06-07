@@ -16,15 +16,16 @@
 \BOOKMARK [3][-]{subsubsection.5.2.1}{Implementacja}{subsection.5.2}% 16
 \BOOKMARK [3][-]{subsubsection.5.2.2}{Wiezy sp\363jnosci}{subsection.5.2}% 17
 \BOOKMARK [3][-]{subsubsection.5.2.3}{ProxySQL}{subsection.5.2}% 18
-\BOOKMARK [2][-]{subsection.5.3}{Zarzadzanie instancjami serwis\363w}{section.5}% 19
-\BOOKMARK [1][-]{section.6}{Rozwiazanie}{}% 20
-\BOOKMARK [2][-]{subsection.6.1}{Serwis uzytkownik\363w}{section.6}% 21
-\BOOKMARK [2][-]{subsection.6.2}{Serwis produkt\363w}{section.6}% 22
-\BOOKMARK [2][-]{subsection.6.3}{Serwis zam\363wien}{section.6}% 23
-\BOOKMARK [2][-]{subsection.6.4}{Frontend}{section.6}% 24
-\BOOKMARK [2][-]{subsection.6.5}{Specyfikacja technologii realizacji oprogramowania}{section.6}% 25
-\BOOKMARK [3][-]{subsubsection.6.5.1}{Standaryzacja zapytan}{subsection.6.5}% 26
-\BOOKMARK [1][-]{section.7}{Organizacja projektu}{}% 27
-\BOOKMARK [2][-]{subsection.7.1}{Mozliwe rozszerzenia}{section.7}% 28
-\BOOKMARK [2][-]{subsection.7.2}{Etapy projektu}{section.7}% 29
-\BOOKMARK [2][-]{subsection.7.3}{Przydzia\233 zadan}{section.7}% 30
+\BOOKMARK [2][-]{subsection.5.3}{Wysoka niezawodnosc}{section.5}% 19
+\BOOKMARK [2][-]{subsection.5.4}{Zarzadzanie instancjami serwis\363w}{section.5}% 20
+\BOOKMARK [1][-]{section.6}{Rozwiazanie}{}% 21
+\BOOKMARK [2][-]{subsection.6.1}{Serwis uzytkownik\363w}{section.6}% 22
+\BOOKMARK [2][-]{subsection.6.2}{Serwis produkt\363w}{section.6}% 23
+\BOOKMARK [2][-]{subsection.6.3}{Serwis zam\363wien}{section.6}% 24
+\BOOKMARK [2][-]{subsection.6.4}{Frontend}{section.6}% 25
+\BOOKMARK [2][-]{subsection.6.5}{Specyfikacja technologii realizacji oprogramowania}{section.6}% 26
+\BOOKMARK [3][-]{subsubsection.6.5.1}{Standaryzacja zapytan}{subsection.6.5}% 27
+\BOOKMARK [1][-]{section.7}{Organizacja projektu}{}% 28
+\BOOKMARK [2][-]{subsection.7.1}{Mozliwe rozszerzenia}{section.7}% 29
+\BOOKMARK [2][-]{subsection.7.2}{Etapy projektu}{section.7}% 30
+\BOOKMARK [2][-]{subsection.7.3}{Przydzia\233 zadan}{section.7}% 31
