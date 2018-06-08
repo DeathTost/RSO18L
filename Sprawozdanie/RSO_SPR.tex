@@ -149,7 +149,7 @@ Rejestr zmian
  19.04.2018 & 0.2 & Opracowanie wstępnych interfejsów serwisów i wyglądu aplikacji użytkowej \\\hline
  26.04.2018 & 0.3 & Szczegółowy opis serwisów \\\hline
  10.05.2018 & 1.0 & Dokumentacja etapu pierwszego\\\hline
- 8.06.2018 & 2.0 & Końcowa dokumentacja projektu \\\hline
+ 08.06.2018 & 2.0 & Końcowa dokumentacja projektu \\\hline
 \end{tabular}
 \end{table}
 %\egroup
@@ -178,10 +178,10 @@ Projektowany system, w swojej podstawowej wersji, powinien być nastawiony na ob
 \begin{enumerate}[start=1,label={WF\arabic*.}]
 \item W związku z koniecznością umożliwienia dostępu do systemu dostawcom produktów oraz klientom, konieczne jest stworzenie mechanizmu kont użytkowników, wraz z możliwością ich edytowania i kasowania. Za utworzenie konta w systemie odpowiedzialny jest użytkownik systemu. Wyróżnia się dodatkowe konto administratora, które umożliwi rozwiązywanie problemów dotyczących użytkowania systemu (w tym zakładania kont, ich nadzorowanie i edycja) a także nadzorowania poprawności działania systemu.
 \item Administrator systemu ma możliwość dodania, usunięcia i zmiany danych osobowych użytkownika. Przyjmuje się, że usunięcie danych osobowych następuje tylko w sytuacji, gdy osoba, której dane dotyczą, wystąpi z żądaniem o zaprzestanie ich przetwarzania. W przeciwnym razie (np. zaprzestanie korzystania z systemu wraz z unieważnieniem konta (np. producent zbankrutował, więc już nie będzie dostarczał produktów)) dane nie są usuwane, a jedynie zostaje zmieniony ich status. Dzięki temu możliwa jest archiwizacja danych dotyczących zawartych transakcji.
-\item Dostawcy produktów mają możliwość dodawania i modyfikowania informacji dotyczących oferowanych towarów. W ramach dodawania produktów istnieje możliwość dodawania pojedynczego produktu, a także wielu produktów zebranych w ustrukturyzowanym pliku. Modyfikowanie produktu uwzględnia  zmianę jego opisu, a także informacje o jego cenie i dostępności. Usuwanie produktu polega na zaprzestaniu wyświetlania produktu w interfejsach użytkowników oraz zmianie statusu produktu zamiast jego trwałego usunięcia. Powyższe funkcjonalności dostępne są także dla administratora systemu.
+\item \label{dostawcy} Dostawcy produktów mają możliwość dodawania i modyfikowania informacji dotyczących oferowanych towarów. W ramach dodawania produktów istnieje możliwość dodawania pojedynczego produktu, a także wielu produktów zebranych w ustrukturyzowanym pliku. Modyfikowanie produktu uwzględnia  zmianę jego opisu, a także informacje o jego cenie i dostępności. Usuwanie produktu polega na zaprzestaniu wyświetlania produktu w interfejsach użytkowników oraz zmianie statusu produktu zamiast jego trwałego usunięcia. Powyższe funkcjonalności dostępne są także dla administratora systemu.
 \item Zalogowany użytkownik ma możliwość tworzenia koszyka produktów. W tym celu korzysta z możliwości wyszukiwania produktów na podstawie wybranych kryteriów (cena, rodzaj towaru, dostępność), przeglądania szczegółowych informacji o wybranym produkcie, a także dodawania go do koszyka. Produkty znajdujące się w koszyku mogą być modyfikowane co do zamawianej ilości oraz usuwane z koszyka. Zatwierdzenie składu koszyka jest jednoznaczne ze złożeniem zamówienia.
 \item Złożone zamówienie może być przeglądane i modyfikowane przez klienta. Modyfikacja udostępniana jest tylko przez pewien czas, zależny od momentu złożenia zamówienia (realizacja zamówień odbywa się o ustalonych godzinach, pod warunkiem dokonania opłaty za zamówienie). Modyfikacji podlega ilość zamówionego produktu. Klient ma również możliwość anulowania zamówienia, o ile nie rozpoczęła się jego realizacja. (zakładamy, że dla reklamacji i zwrotów produktów powstanie nowy mikroserwis). 
-\item System powinien mieć możliwość generowania raportów i statystyk dotyczących sprzedaży produktów. Funkcjonalność ta dostępna jest dla dostawców produktów.
+\item \label{statystyki} System powinien mieć możliwość generowania raportów i statystyk dotyczących sprzedaży produktów. Funkcjonalność ta dostępna jest dla dostawców produktów.
 \end{enumerate}
 
 \subsection{Wymagania niefunkcjonalne}
@@ -875,7 +875,7 @@ Kody odpowiedzi:
 %\clearpage
 \newpage
 \subsection{Frontend}
-Interfejs graficzny sklepu zostanie zrealizowany jako strona internetowa pozwalająca na interakcję użytkowników z systemem. Pozwala klientom na logowanie, wylogowanie oraz rejestrację. Do realizacji zostaną wykorzystane biblioteki oraz framework Vue.js, Vuex, Bootstrap, Bootstrap Vue, npm i vue-sessionstorage.
+Interfejs graficzny sklepu zostanie zrealizowany jako strona internetowa pozwalająca na interakcję użytkowników z systemem. Pozwala klientom na logowanie, wylogowanie oraz rejestrację. Do realizacji zostaną wykorzystane biblioteki oraz framework \href{https://vuejs.org/}{Vue.js}, \href{https://vuex.vuejs.org/en/}{Vuex}, \href{https://www.npmjs.com/package/vuex-persistedstate}{vuex-persistedstate}, \href{https://www.npmjs.com/package/vuex-shared-mutations}{vuex-shared-mutations}, \href{https://www.npmjs.com/package/vue-router}{vue-router}, \href{https://getbootstrap.com/}{Bootstrap}, \href{https://bootstrap-vue.js.org/}{Bootstrap Vue}, \href{https://www.npmjs.com/package/axios}{axios}, \href{https://www.npmjs.com/package/vue-axios}{vue-axios} i  \href{https://www.npmjs.com/package/vuelidate}{vuelidate}.
 
 \begin{figure}[] 
   %\label{ fig7} 
@@ -945,6 +945,10 @@ Strony internetowe wykorzystujące framework Vue.js zbudowane są z zagnieżdżo
 \includegraphics[height=6.5cm, width=15.7cm]{FRONTEND_UML}
 \end{figure}
 
+Stan strony jest magazynem danych strony dostępnym z poziomu każdego komponentu. Przechowywane są w nim takie dane jak aktualnie wybrana kategoria produktów, jak również aktualna zawartość koszyka.
+
+Każda otwarta karta sklepu posiada swój własny, oddzielnie modyfikowany stan. Niektóre metody jego zmiany (takie jak dodanie lub usunięcie produktu z koszyka) są rozgłaszane do wszystkich otwartych instancji.  Dzięki temu koszyk oraz stan zalogowania są wspólne nawet przeglądając sklep na wielu kartach na raz.
+
 %\newpage
 %\subsection{Specyfikacja sprzętu i oprogramowania}
 %\color{red}
@@ -997,19 +1001,20 @@ zwróci 25 pierwszych produktów, których w sklepie jest więcej niż 0 sztuk, 
 
 
 \section{Organizacja projektu}
+
 \subsection{Możliwe rozszerzenia}
 W ramach projektu, sklep internetowy będzie realizował transakcje między klientami a sklepem. Funkcjonalność ta realizowana jest przez trzy serwisy opisane wyżej.
 
 Rozwój projektu może obejmować:
 \begin{enumerate}
-\item Obsługę zamówienia po stronie dostawców:
+\item Obsługę zamówienia po stronie dostawców (\ref{dostawcy}):
 \begin{itemize}
 \item zmiana stanów zamówienia w zależności od tego czy zamówienie jest realizowane/transportowane/zakończone
 \item realizacja umów zawartych z dostawcami -- nowy serwis dostaw, którego zadaniem jest realizacja zamówienia złożonego przez klienta (który dostawca realizuje które zamówienie)
 \end{itemize}
 \item Realizację płatności -- zamiast korzystania z zewnętrznego serwisu
 \item Obsługę reklamacji i zwrotów -- nowy mikroserwis
-\item Generowanie raportów i statystyk zgodnie z WF6.
+\item Generowanie raportów i statystyk zgodnie z \ref{statystyki}
 \end{enumerate}
 
 Obecnie istniejące serwisy przygotowane są w taki sposób by obsługa zamówień po stronie dostawców nie wymagała ich modyfikacji (lub bardzo mało).
@@ -1019,6 +1024,17 @@ Obecnie istniejące serwisy przygotowane są w taki sposób by obsługa zamówie
 %przyda się przy dokumentacji końcowej
 
 %Etapy projektu\\
+\subsection{Przydział zadań}
+\begin{itemize}
+\item Szymon Bezpalko -- projekt i implementacja serwisu zamówień
+\item Konrad Kaproń -- analiza i wdrożenie zagadnień związanych z replikacją baz danych
+\item Tomasz Korzeniowski -- projekt i implementacja serwisu dotyczącego produktów, projekt architektury systemu, integracja dokumentacji
+\item Marcin Macias -- kierownictwo prac w ramach projektu,  analiza rozporządzenia o ochronie danych pod kątem działalności e-commerce, redakcja i edycja dokumentacji
+\item Krzysztof Solecki -- projekt i implementacja warstwy prezentacji
+\item Michał Trochimiak -- projekt i implementacja serwisu użytkowników wraz z ich uwierzytelnieniem, konfiguracja narzędzi Docker, Keycloak i Kubernetes
+\end{itemize}
+
+\newpage
 \subsection{Etapy projektu}
 \begin{table}[ht]
 \label{etapyProjektu}
@@ -1039,17 +1055,6 @@ Obecnie istniejące serwisy przygotowane są w taki sposób by obsługa zamówie
 \end{tabularx}
 \end{table}
 
-
-\subsection{Przydział zadań}
-\begin{itemize}
-\item Szymon Bezpalko -- projekt i implementacja serwisu zamówień
-\item Konrad Kaproń -- analiza i wdrożenie zagadnień związanych z replikacją baz danych
-\item Tomasz Korzeniowski -- projekt i implementacja serwisu dotyczącego produktów, projekt architektury systemu, integracja dokumentacji
-\item Marcin Macias -- kierownictwo prac w ramach projektu,  analiza rozporządzenia o ochronie danych pod kątem działalności e-commerce, redakcja i edycja dokumentacji
-\item Krzysztof Solecki -- projekt i implementacja warstwy prezentacji
-\item Michał Trochimiak -- projekt i implementacja serwisu użytkowników wraz z ich uwierzytelnieniem, konfiguracja narzędzi Docker, Keycloak i Kubernetes
-
-\end{itemize}
 
 %Przydział zadań\\
 %Co udało się zrealizować, a czego nie\\

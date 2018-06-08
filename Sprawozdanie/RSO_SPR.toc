@@ -27,5 +27,5 @@
 \contentsline {subsubsection}{\numberline {6.5.1}Standaryzacja zapyta\IeC {\'n}}{26}{subsubsection.6.5.1}
 \contentsline {section}{\numberline {7}Organizacja projektu}{27}{section.7}
 \contentsline {subsection}{\numberline {7.1}Mo\IeC {\.z}liwe rozszerzenia}{27}{subsection.7.1}
-\contentsline {subsection}{\numberline {7.2}Etapy projektu}{27}{subsection.7.2}
-\contentsline {subsection}{\numberline {7.3}Przydzia\IeC {\l } zada\IeC {\'n}}{28}{subsection.7.3}
+\contentsline {subsection}{\numberline {7.2}Przydzia\IeC {\l } zada\IeC {\'n}}{27}{subsection.7.2}
+\contentsline {subsection}{\numberline {7.3}Etapy projektu}{28}{subsection.7.3}
